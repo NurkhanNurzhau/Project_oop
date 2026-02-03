@@ -1,7 +1,11 @@
 package org.example.sql_connect.service;
 
-import org.example.sql_connect.dao.ShopperDAO;
+import org.example.sql_connect.dao.ShopperRepository;
 import org.example.sql_connect.entity.Shopper;
+import org.example.sql_connect.exception.InvalidDataException;
+import org.example.sql_connect.exception.NotFoundException;
+import org.example.sql_connect.pattern.RepositoryFactory;
+import org.example.sql_connect.util.RttiUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,31 +13,42 @@ import java.util.List;
 @Service
 public class ShopperService {
 
-    private final ShopperDAO dao;
+    private final ShopperRepository repo;
 
-    public ShopperService(ShopperDAO dao) {
-        this.dao = dao;
+    public ShopperService(RepositoryFactory factory) {
+        this.repo = factory.shopperRepo();
     }
 
-    public Shopper create(Shopper s) {
-        dao.create(s);
-        List<Shopper> all = dao.readAll();
-        return all.isEmpty() ? null : all.get(all.size() - 1);
+    public List<Shopper> allFromDb() {
+        return repo.readAll();
     }
 
-    public List<Shopper> readAll() {
-        return dao.readAll();
+    public Shopper byId(int id) {
+        Shopper s = repo.findById(id);
+        if (s == null) throw new NotFoundException("Shopper not found: id=" + id);
+        RttiUtils.detectEntityType(s);
+        return s;
     }
 
-    public Shopper findById(int id) {
-        return dao.findById(id);
+    public void create(Shopper s) {
+        validate(s);
+        repo.create(s);
     }
 
-    public boolean updateEmail(int id, String email) {
-        return dao.updateEmail(id, email) > 0;
+    public void updateEmail(int id, String email) {
+        if (email == null || email.isBlank()) throw new InvalidDataException("Email is required");
+        int affected = repo.updateEmail(id, email);
+        if (affected == 0) throw new NotFoundException("Shopper not found: id=" + id);
     }
 
-    public boolean delete(int id) {
-        return dao.delete(id) > 0;
+    public void delete(int id) {
+        int affected = repo.delete(id);
+        if (affected == 0) throw new NotFoundException("Shopper not found: id=" + id);
+    }
+
+    private void validate(Shopper s) {
+        if (s == null) throw new InvalidDataException("Shopper is required");
+        if (s.getFullName() == null || s.getFullName().isBlank()) throw new InvalidDataException("Full name is required");
+        if (s.getEmail() == null || s.getEmail().isBlank()) throw new InvalidDataException("Email is required");
     }
 }

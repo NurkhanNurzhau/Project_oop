@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -18,31 +19,63 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> all() {
-        return service.readAll();
+    public List<Product> allDb() {
+        return service.allFromDb();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> byId(@PathVariable int id) {
-        Product p = service.findById(id);
-        return (p == null) ? ResponseEntity.notFound().build() : ResponseEntity.ok(p);
+    public Product byId(@PathVariable int id) {
+        return service.byId(id);
     }
 
     @PostMapping
-    public ResponseEntity<Product> create(@RequestBody Product p) {
-        Product created = service.create(p);
-        return ResponseEntity.ok(created);
+    public Product create(@RequestBody Map<String, Object> body) {
+        String name = body.get("name") == null ? null : body.get("name").toString();
+        double price = body.get("price") == null ? 0 : Double.parseDouble(body.get("price").toString());
+        int stock = body.get("stock") == null ? 0 : Integer.parseInt(body.get("stock").toString());
+        return service.createFromBuilder(name, price, stock);
     }
 
     @PutMapping("/{id}/stock")
     public ResponseEntity<String> updateStock(@PathVariable int id, @RequestParam int stock) {
-        boolean ok = service.updateStock(id, stock);
-        return ok ? ResponseEntity.ok("Updated") : ResponseEntity.notFound().build();
+        service.updateStock(id, stock);
+        return ResponseEntity.ok("Updated");
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable int id) {
-        boolean ok = service.delete(id);
-        return ok ? ResponseEntity.ok("Deleted") : ResponseEntity.notFound().build();
+        service.delete(id);
+        return ResponseEntity.ok("Deleted");
+    }
+
+    @PostMapping("/pool/refresh")
+    public ResponseEntity<String> refreshPool() {
+        service.refreshPoolFromDb();
+        return ResponseEntity.ok("Pool refreshed from DB");
+    }
+
+    @GetMapping("/pool")
+    public List<Product> poolAll() {
+        return service.poolAll();
+    }
+
+    @GetMapping("/pool/filter")
+    public List<Product> poolFilter(@RequestParam double minPrice) {
+        return service.poolFilterMinPrice(minPrice);
+    }
+
+    @GetMapping("/pool/search")
+    public List<Product> poolSearch(@RequestParam String q) {
+        return service.poolSearchName(q);
+    }
+
+    @GetMapping("/pool/sort/price")
+    public List<Product> poolSortPriceAsc() {
+        return service.poolSortPriceAsc();
+    }
+
+    @GetMapping("/pool/sort/stock")
+    public List<Product> poolSortStockDesc() {
+        return service.poolSortStockDesc();
     }
 }

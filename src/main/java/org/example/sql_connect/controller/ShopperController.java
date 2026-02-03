@@ -18,31 +18,30 @@ public class ShopperController {
     }
 
     @GetMapping
-    public List<Shopper> all() {
-        return service.readAll();
+    public List<Shopper> allDb() {
+        return service.allFromDb();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Shopper> byId(@PathVariable int id) {
-        Shopper s = service.findById(id);
-        return (s == null) ? ResponseEntity.notFound().build() : ResponseEntity.ok(s);
+    public Shopper byId(@PathVariable int id) {
+        return service.byId(id);
     }
 
     @PostMapping
-    public ResponseEntity<Shopper> create(@RequestBody Shopper s) {
-        Shopper created = service.create(s);
-        return ResponseEntity.ok(created);
+    public ResponseEntity<String> create(@RequestBody Shopper s) {
+        service.create(s);
+        return ResponseEntity.ok("Created");
     }
 
     @PutMapping("/{id}/email")
     public ResponseEntity<String> updateEmail(@PathVariable int id, @RequestParam String email) {
-        boolean ok = service.updateEmail(id, email);
-        return ok ? ResponseEntity.ok("Updated") : ResponseEntity.notFound().build();
+        service.updateEmail(id, email);
+        return ResponseEntity.ok("Updated");
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(@PathVariable int id) {
-        boolean ok = service.delete(id);
-        return ok ? ResponseEntity.ok("Deleted") : ResponseEntity.notFound().build();
+        service.delete(id);
+        return ResponseEntity.ok("Deleted");
     }
 }
